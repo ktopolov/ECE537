@@ -4,67 +4,58 @@ Created on Tue Oct 19 19:21:25 2021
 
 @author: ktopo
 """
-import simplekml
 import matplotlib.pyplot as plt
 import numpy as np
 
-# %%
-a = 1.0
-b = 0.2
-c = 5
+from codebase import kml
 
-lat = np.linspace(-30.0, -20.0, num=100)
-lon = np.linspace(80.0, 90.0, num=80)
-n_lat = lat.size
-n_lon = lon.size
-heatmap = np.zeros((n_lat, n_lon))
+# %% Define Sample CO2 Heatmap (To Be Replaced)
+a, b, c = 3.0, 0.2, 5.0
 
-lat_idx = np.arange(n_lat) - n_lat/2
-lon_idx = np.arange(n_lon) - n_lon/2
-lat_idx, lon_idx = np.meshgrid(lat_idx, lon_idx)
+lat_center, lon_center = 0.0, 0.0
+lat_extent, lon_extent = 10.0, 10.0
 
-heatmap = (a*lat_idx**2 + b*lat_idx + c) + 2*(a*lon_idx**2 + b*lon_idx + c)
+n_lat, n_lon = 100, 50
 
-levels = np.arange(5001, step=1000)
+lat = np.linspace(lat_center - lat_extent/2, lat_center + lat_extent/2, num=n_lat)
+lon = np.linspace(lon_center - lon_extent/2, lon_center + lon_extent/2, num=n_lon)
+
+lat_grid, lon_grid = np.meshgrid(lat, lon)
+
+lat_grid_offset = lat_grid - lat_grid.mean()
+lon_grid_offset = lon_grid - lon_grid.mean()
+heatmap = a*(lat_grid_offset)**2 + b*lat_grid_offset + c \
+    + 2*(a*lon_grid_offset**2 + b*lon_grid_offset + c)
+
+# %% Contours
 plt.figure(1, clear=True)
-contours = plt.contourf(lat_idx, lon_idx, heatmap, levels=levels)
-# plt.contour(lat_idx, lon_idx, heatmap, levels=levels)
-plt.xlabel('Latitude')
-plt.ylabel('Longitude')
-plt.title('Expected CO2 Concentration')
-plt.grid()
-plt.colorbar()
+contours =  plt.contour(lat_grid, lon_grid, heatmap, levels=10)
 
 # %%
-p = contours.collections[0].get_paths()[0]
-v = p.vertices
-x = v[:,0]
-y = v[:,1]
+Writer = kml.KmlWriter(kml_file='myfile.kml')
 
-# %%
-# All pairs are lon/lat
-kml = simplekml.Kml()
-
-polygon = kml.newpolygon(
-    extrude=None,
-    tessellate=None,
-    altitudemode=None,
-    gxaltitudemode=None,
-    outerboundaryis=[(-83, 42), (-83, 44), (-85, 44), (-85, 42)],
-    innerboundaryis=(),
-    name='Polygon'
+Writer.add_point(
+    lat=lat_center,
+    lon=lon_center,
+    rgba=(255, 255, 0, 255),
+    name='Center of ROI',
+    description='Center of the selected region of interest'
 )
-polygon.style.polystyle.color = simplekml.Color.green
 
-point = kml.newpoint(name="Point", coords=[(-84, 43)])
-point.style.linestyle.width = 3
-point.style.linestyle.color = simplekml.Color.red
+for collection in contours.collections[-1:0:-1]:
+    paths = collection.get_paths()
 
-path = kml.newlinestring(
-    name='Path',
-    coords=[(-83, 42), (-83, 44), (-85, 43), (-83, 42)]
-)
-path.style.linestyle.width = 5
-path.style.linestyle.color = simplekml.Color.blue
+    color = (255 * collection.get_edgecolor()).astype(int).flatten()
 
-kml.save('myfile.kml')
+    for path in paths:
+        lat_points = path.vertices[:, 0]
+        lon_points = path.vertices[:, 1]
+
+        Writer.add_path(
+            lats=lat_points,
+            lons=lon_points,
+            rgba=color
+        )
+
+Writer.write()
+

@@ -1,7 +1,9 @@
-# -*- coding: utf-8 -*-
 """
-Created on Tue Oct 19 19:51:33 2021
+codebase
 
-@author: ktopo
+Carbon prediction codebase
 """
 
+__version__ = "0.1.0"
+__author__ = 'Kenny Topolovec'
+__credits__ = 'University of Michigan - Dearborn'
