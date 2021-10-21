@@ -17,8 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description='Write CO2 and CH4 NETCDF files to .csv')
     parser.add_argument('--co2', dest='co2_dir', default=None, type=str, help='Path to CO2 netcdf ')
     parser.add_argument('--ch4', dest='ch4_dir', default=None, type=str, help='Path to CH4 netcdf ')
-    parser.add_argument('--out_dir', default='.', type=str, help='Path to output .csv file(s) ')
-
+    parser.add_argument('--out-dir', default='.', type=str, help='Path to output .csv file(s) ')
     args = parser.parse_args()
 
     assert args.out_dir is not None, 'Require output directory'
@@ -50,6 +49,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    # Example is:
-    python C:\Users\ktopo\Desktop\School\Courses\Masters\ECE 537 - Data Mining\ECE537\examples>python write_data_to_csv.py
