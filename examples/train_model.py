@@ -6,8 +6,10 @@ Script for model training and evaluation
 # Select the tarball
 # ESA Greenhouse Gases Climate Change Initiative (GHG_cci): Column-averaged methane from Sentinel-5P, generated with the WFM-DOAS algorithm, version 1.2
 # Number of files: 3113
-
 # %% Imports
+# File
+from pathlib import Path
+
 # Computing
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +17,7 @@ import pandas as pd
 
 # Model based
 from tensorflow import keras
-from tensorflow.keras import layers, optimizers, regularizers
+from tensorflow.keras import layers, optimizers
 from sklearn.linear_model import LinearRegression
 
 # Metrics
@@ -23,34 +25,39 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
 # Internal
-import dataio
+from codebase import features
 
 # %% Read from CSV
 n_row = None  # number of rows to read from CSV
-
 output_type = 'co2'  # co2, ch4
 
+# data_dir = Path('/mnt/c/Users/ktopo/Desktop/ECE537/data')
+data_dir = Path('C:/Users/ktopo/Desktop/ECE537/data')
+
 if output_type == 'co2':
-    csv_name = 'co2_data.csv'
-    df = pd.read_csv(csv_name, nrows=n_row)
-    y = df['co2'].to_numpy()
+    csv_name = data_dir / Path('co2_data.csv')
 elif output_type == 'ch4':
-    csv_name = 'ch4_data.csv'
-    df = pd.read_csv(csv_name, nrows=n_row)
-    y = df['ch4'].to_numpy()
+    csv_name = data_dir / Path('ch4_data.csv')
 else:
     raise ValueError('Invalid model type')
 
+df = pd.read_csv(csv_name, nrows=n_row)
+
 # %% Features
-n_days_since_03 = df['day_since_03'].to_numpy()
+days_since_03 = df['day_since_03'].to_numpy()
+months_since_03 = np.floor(days_since_03 / 30)
+
 lat = df['lat'].to_numpy()
 lon = df['lon'].to_numpy()
+ecf = features.lla_to_ecf(lat=lat, lon=lon)
+norm_ecf = ecf / features.EARTH_RADIUS
 
-X = dataio.preprocess_features(
-    n_days_since_03=n_days_since_03,
-    lat=lat,
-    lon=lon,
-    )
+X = np.concatenate(
+    (norm_ecf, months_since_03[:, np.newaxis]),
+    axis=-1
+)
+
+y = df[output_type].to_numpy()
 
 # TODO-KT: Split training and testing
 test_size = 0.25
@@ -60,51 +67,14 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
 del X, y
 
 # %% Fit Model
-n_feat = X_train.shape[1]
-
-model_type = 'linear'  # linear, nn
-
-if model_type == 'linear':
-    Model = LinearRegression()
-    Model.fit(X=X_train, y=y_train)
-elif model_type == 'nn':
+n_feature = X_train.shape[1]
 
     # Define model structure
-    layer_list = [
-        keras.Input(shape=(n_feat,), name='Input'),
-        layers.Dense(10, activation='relu'),
-        layers.Dense(50, activation='relu'),
-        layers.Dense(10, activation='relu'),
-        layers.Dense(5, activation='relu'),
-        layers.Dense(1, name='output', activation=None),
-    ]
-    Model = keras.Sequential(layers=layer_list)
     
-    # Compile model
-    LEARN_RATE = 0.001
-    BATCH_SIZE = 256
-    N_EPOCH = 5
-    optimizer = optimizers.Adam(learning_rate=LEARN_RATE)
-    Model.compile(
-        optimizer='adam',  # Create optimizer object and pass in with learning
-        loss=keras.losses.MSE,
-        metrics=['mse'],
-        loss_weights=None,
-        sample_weight_mode=None,
-        weighted_metrics=None,
-        target_tensors=None,
-        distribute=None
-    )
-
-    Model.fit(
-        X_train,
-        y_train,
-        batch_size=BATCH_SIZE,
-        epochs=N_EPOCH,
-        verbose=1,
-    )
 else:
     raise ValueError('Invalid model type')
+
+# %% Save to file
 
 # %% Train Model without need to Load All Data
 y_predict = Model.predict(X_test, batch_size=64)
