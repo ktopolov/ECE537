@@ -47,7 +47,7 @@ python /mnt/c/Users/ktopo/Desktop/ece537_data/visualize_data.py --co2-csv /mnt/c
 Input arguments are:  
 *  `--mode`: Can be `region` or `location`.  
 *  `--start-time`: Starting month and year of simulation. Stored as `--start-time month year`
-*  `--stop-time`: Starting month and year of simulation. Stored as `--start-time month year`
+*  `--months`: Number of months to simulate  
 *  `--lat-bounds`: Minimum and maximum latitude boundaries (degrees, -90.0 to 90.0) entered as `min max`. Only needed for `--mode region`
 *  `--lon_bounds`: Minimum and maximum longitude boundaries (degrees, -180.0 to 180.0) entered as `min max`. Only needed for `--mode region`  
 *  `--lat-res`: Resolution or spacing of latitude grid samples (deg); only for `--mode region`
@@ -55,9 +55,9 @@ Input arguments are:
 *  `--locs`: Locations of points to test for `--mode location`. Stored as `--locs lat1 lon1 lat2 lon2 ...`
 Example command line calls are:  
 ```
---mode region --lat-bounds -20.0 20.0 --lat-res 1.0 --lon-bounds -30.0 30.0 --lon-res 2.0 --start-time 10 2022 --stop-time 10 2025
+--mode region --lat-bounds -20.0 20.0 --lat-res 1.0 --lon-bounds -30.0 30.0 --lon-res 2.0 --start-time 10 2022 --months 24
 ```  
   
 ```  
---mode location --locs 20.0 30.0 15.5 22.3 --start-time 10 2022 --stop-time 10 2025
+--mode location --locs 20.0 30.0 15.5 22.3 --start-time 10 2022 --months 36
 ```
