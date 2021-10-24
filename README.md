@@ -36,7 +36,7 @@ python /mnt/c/Users/ktopo/Desktop/ECE537/cli/write_data_to_csv.py --co2 /mnt/c/U
 #### visualize_data.py  
 This script opens many plots to give a high-level overview of the data stored in the input CSV files. Example is:  
 ```
-python /mnt/c/Users/ktopo/Desktop/ece537_data/visualize_data.py --co2-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/co2_data.csv --ch4-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/ch4_data.csv 
+python /mnt/c/Users/ktopo/Desktop/ECE537/cli/visualize_data.py --co2-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/co2_data.csv --ch4-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/ch4_data.csv 
 ```  
   
   #### main_app.py  
