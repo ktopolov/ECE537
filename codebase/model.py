@@ -6,8 +6,6 @@ import numpy as np
 from tensorflow import keras
 import pickle
 
-from codebase import features
-
 # %% Prediction Wrappers
 # Base Class
 class WrapperModel():
@@ -37,7 +35,7 @@ class WrapperModel():
         else:
             raise ValueError('Unknown Model type {}'.format(model_type_full))
 
-    def init_from_file(self, model_type, file):
+    def init_from_file(self, model_type, path):
         """Initialize wrapper from a Model either from sklearn or TensorFlow
         
         Parameters
@@ -45,30 +43,30 @@ class WrapperModel():
         model_type : str
             Either 'sklearn' or 'tf'
 
-        file : str
-            Filepath
+        path : str
+            Filepath for sklearn models or directory for TF models
         """
         if model_type == 'sklearn':
             self.model_type = 'sklearn'
-            self.Model = pickle.load((open(file, 'rb')))
+            self.Model = pickle.load((open(path, 'rb')))
         elif model_type == 'tf':
             self.model_type = 'tf'
-            self.Model = keras.models.load_model(file)
+            self.Model = keras.models.load_model(path)
         else:
             raise ValueError('model_type {} unknown'.format(model_type))
 
-    def save(self, file):
+    def save(self, path):
         """Save model to file
 
         Parameters
         ----------
-        file : str
-            Filepath
+        path : str
+            Filepath for sklearn models or directory for tf models
         """
         if self.model_type == 'sklearn':
-            pickle.dump(self.Model, open(file, 'wb'))
+            pickle.dump(self.Model, open(path, 'wb'))
         elif self.model_type == 'tf':
-            self.Model.save(filepath=file)
+            self.Model.save(filepath=path)
         else:
             raise ValueError('self.model_type {} either unset or invalid'.format(
                 self.model_type))
@@ -115,54 +113,4 @@ class WrapperModel():
         kwargs : {}
             Additional model kwargs based on self.model_type
         """
-        self.Model.fit(x, y)
-
-    # def predict_grid(self, x_grid):
-    #     """Predict carbon for combination of given latitude, longitude, months
-    
-    #     Parameters
-    #     ----------
-    #     Model :
-    #         Any model type with a "y = predict(X=x)" function
-            
-    #     lats : (n_lat) np.ndarray float
-    #         Latitudes
-    
-    #     lons : (n_lon) np.ndarray float
-    #         Longitudes
-    
-    #     months : (n_month) np.ndarray float
-    #         Months since 2003
-    
-    #     Returns
-    #     -------
-    #     carbon_predict : (n_lat, n_lon, n_month) np.ndarray float
-    #         Predicted carbon
-    #     """
-    #     # Define grid of data
-    #     lats_grid, lons_grid, months_grid = np.meshgrid(
-    #         lats,
-    #         lons,
-    #         months,
-    #         indexing='ij'
-    #     )
-    #     grid_shape = months_grid.shape
-        
-    #     months_grid = months_grid.flatten()
-    #     lats_grid = lats_grid.flatten()
-    #     lons_grid = lons_grid.flatten()
-    
-    #     # Transform to features
-    #     ecf_grid = features.lla_to_ecf(lat=lats_grid, lon=lons_grid)
-    #     norm_ecf_grid = ecf_grid / features.EARTH_RADIUS
-        
-    #     X = np.concatenate(
-    #         (norm_ecf_grid, months_grid[:, np.newaxis]),
-    #         axis=-1
-    #     )
-
-    #     carbon_predict = self.Model.predict(X)
-    #     carbon_predict = carbon_predict.reshape(grid_shape)
-    #     return carbon_predict
-
-    
+        self.Model.fit(x, y, **kwargs)

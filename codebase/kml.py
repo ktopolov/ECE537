@@ -140,7 +140,13 @@ class KmlWriter():
         )
         polygon.color = self._rgba_to_kmlhex(rgba)
 
-    def add_contours(self, lat_grid, lon_grid, values, levels=5):
+    def add_contours(
+        self,
+        lat_grid,
+        lon_grid,
+        values,
+        levels=5
+    ):
         """Add contour lines to KML file
     
         Parameters
@@ -157,30 +163,75 @@ class KmlWriter():
         levels : [] or int
             Specific level values for contours or number of levels
         """
-        contours =  plt.contour(
-            lat_grid,
+        contours = plt.contour(
             lon_grid,
+            lat_grid,
             values,
-            levels=levels)
+            levels=levels,
+            cmap='jet'
+        )
+        # plt.show()  # needed in case no X display, this will free things up
     
         for collection, level in zip(contours.collections, contours.levels):
             paths = collection.get_paths()
             color = (255 * collection.get_edgecolor()).astype(int).flatten()
-    
+
             for path in paths:
                 self.add_path(
-                    lats=path.vertices[:, 0],
-                    lons=path.vertices[:, 1],
+                    lats=path.vertices[:, 1],
+                    lons=path.vertices[:, 0],
                     rgba=color,
-                    name='{}'.format(level),
+                    name='',
                     description='{}'.format(level)
                 )
+
+    def add_ground_overlay(
+        self,
+        max_lat,
+        min_lat,
+        max_lon,
+        min_lon,
+        img_path,
+        name='',
+        description=''
+    ):
+        """Add ground overlay image to map
+
+        Parameters
+        ----------
+        max_lat : float
+            Maximum latitude edge
+
+        min_lat : float
+            Minimum latitude edge
+
+        max_lon : float
+            Maximum longitude edge
+
+        min_lon : float
+            Minimum longitude edge
+
+        img_path : str
+            Path to image
+
+        name : str
+            Name of KML item
+
+        description : str
+            Description of KML item
+        """
+        ground = self.kml.newgroundoverlay(name=name)
+        ground.icon.href = img_path
+        ground.latlonbox.north = max_lat
+        ground.latlonbox.south = min_lat
+        ground.latlonbox.east =  max_lon
+        ground.latlonbox.west =  min_lon
 
     @staticmethod
     def _rgba_to_kmlhex(rgba):
         """Convert RGBA to ARGB in Hex for KML"""
         r, g, b, a = rgba
-        hex_color = '#{:02X}{:02X}{:02X}{:02X}'.format(a, r, g, b)
+        hex_color = '#{:02X}{:02X}{:02X}{:02X}'.format(a, b, g, r)
         return hex_color
 
     @staticmethod
