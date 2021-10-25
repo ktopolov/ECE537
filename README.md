@@ -31,12 +31,12 @@ This section describes CLI scripts' purpose and provides example CLI calls.
 #### write_data_to_csv.py  
 This script allows us to extract data from folders containing the `.nc` files containing atmospheric data, extract the desired data and store in a single `.csv` file. Example call is:  
 ```
-python /mnt/c/Users/ktopo/Desktop/ECE537/examples/python write_data_to_csv.py --co2 /mnt/c/Users/ktopo/Desktop/ece537_data/C02_SCIA_IMAP/ --ch4 /mnt/c/Users/ktopo/Desktop/ece537_data/CH4_SCIA_IMAP_v72/ --out-dir /mnt/c/Users/ktopo/Desktop/ECE537/data  
+python /mnt/c/Users/ktopo/Desktop/ECE537/cli/write_data_to_csv.py --co2 /mnt/c/Users/ktopo/Desktop/ece537_data/C02_SCIA_IMAP/ --ch4 /mnt/c/Users/ktopo/Desktop/ece537_data/CH4_SCIA_IMAP_v72/ --out-dir /mnt/c/Users/ktopo/Desktop/ECE537/data  
 ```
 #### visualize_data.py  
 This script opens many plots to give a high-level overview of the data stored in the input CSV files. Example is:  
 ```
-python /mnt/c/Users/ktopo/Desktop/ece537_data/visualize_data.py --co2-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/co2_data.csv --ch4-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/ch4_data.csv 
+python /mnt/c/Users/ktopo/Desktop/ECE537/cli/visualize_data.py --co2-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/co2_data.csv --ch4-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/ch4_data.csv 
 ```  
   
   #### main_app.py  
