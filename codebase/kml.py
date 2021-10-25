@@ -54,7 +54,9 @@ class KmlWriter():
             coords=[(lon, lat)],
             **kwargs
         )
-        point.color = self._rgba_to_kmlhex(rgba)
+        point.style.iconstyle.color = self._rgba_to_kmlhex(rgba)
+        point.style.iconstyle.scale = 5  # make icon bigger
+        point.style.labelstyle.scale = 5  # make text bigger
 
     def add_path(
         self,

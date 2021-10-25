@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import datetime
 
 # Model based
 from tensorflow import keras
@@ -25,23 +26,24 @@ from codebase import model
 
 # %% Read from CSV
 n_row = None  # number of rows to read from CSV
-output_type = 'co2'  # co2, ch4
+output_type = 'xco2'  # xco2, xch4
 
 # data_dir = Path('/mnt/c/Users/ktopo/Desktop/ECE537/data')
 data_dir = Path('C:/Users/ktopo/Desktop/ECE537/data')
 
-if output_type == 'co2':
+if output_type == 'xco2':
     csv_name = data_dir / Path('co2_data.csv')
-elif output_type == 'ch4':
+elif output_type == 'xch4':
     csv_name = data_dir / Path('ch4_data.csv')
 else:
     raise ValueError('Invalid model type')
 
 df = pd.read_csv(csv_name, nrows=n_row)
 
-lat = df['lat'].to_numpy()
-lon = df['lon'].to_numpy()
-days_since_03 = df['day_since_03'].to_numpy()
+lat = df['latitude'].to_numpy()
+lon = df['longitude'].to_numpy()
+epoch_time = df['time'].to_numpy()
+
 carbon = df[output_type].to_numpy()
 
 # Synthetic Data: This data intentionally has a trend. Using this
@@ -50,9 +52,9 @@ carbon = df[output_type].to_numpy()
 
 # %% Features
 X = features.preprocess(
-    lat=df['lat'].to_numpy(),
-    lon=df['lon'].to_numpy(),
-    days_since_03=df['day_since_03'].to_numpy()
+    lat=lat,
+    lon=lon,
+    epoch_time=epoch_time
 )
 
 y = carbon
@@ -66,7 +68,7 @@ del X, y
 
 # %% Fit Model
 n_feature = X_train.shape[1]
-modeltype = 'linear'
+modeltype = 'nn'
 
 if modeltype == 'linear':
     Model = LinearRegression()
@@ -76,17 +78,21 @@ if modeltype == 'linear':
 elif modeltype == 'nn':
     layer_list = [
         keras.Input(shape=(n_feature,), name='Input'),
+        layers.Dense(10, activation='relu'),
         layers.Dense(20, activation='relu'),
         layers.Dense(30, activation='relu'),
+        layers.Dense(40, activation='relu'),
         layers.Dense(50, activation='relu'),
+        layers.Dense(40, activation='relu'),
         layers.Dense(30, activation='relu'),
         layers.Dense(20, activation='relu'),
+        layers.Dense(10, activation='relu'),
         layers.Dense(1, name='output', activation=None),
     ]
     Model = keras.Sequential(layers=layer_list)
-    
+
     # Compile model
-    LEARN_RATE = 0.01
+    LEARN_RATE = 0.005
     optimizer = optimizers.Adam(learning_rate=LEARN_RATE)
     Model.compile(
         optimizer=optimizer,  # Create optimizer object and pass in with learning
@@ -99,7 +105,7 @@ elif modeltype == 'nn':
         distribute=None
     )
     fit_kwargs = {
-        'epochs': 2,
+        'epochs': 3,
         'batch_size': 64
     }
     model_name = 'tf_model'
@@ -112,108 +118,150 @@ WrapModel = model.WrapperModel()
 WrapModel.init_from_model(Model=Model)
 WrapModel.fit(X_train, y_train, **fit_kwargs)
 
+# %% Show Predictions
+train_prediction = WrapModel.predict(X_train)
+
+mse = mean_squared_error(y_pred=train_prediction, y_true=y_train)
+print('MSE on Training Data: {}'.format(mse))
+
+n_skip = 3000
+
+plt.figure(1, clear=True)
+plt.plot(train_prediction[::n_skip], label='Predict')
+plt.plot(y_train[::n_skip], label='Truth')
+plt.xlabel('Row')
+plt.ylabel('Carbon Amount')
+plt.grid()
+plt.title('Comparing Predictions on Training Data to Truth')
+plt.legend()
+
 # %% Show Metrics
 y_predict = WrapModel.predict(X_test)
 mse = mean_squared_error(y_pred=y_predict, y_true=y_test)
-print('MSE: {}'.format(mse))
+print('MSE on Testing Data: {}'.format(mse))
+
+n_skip = 3000
+
+plt.figure(2, clear=True)
+plt.plot(y_predict[::n_skip], label='Predict')
+plt.plot(y_test[::n_skip], label='Truth')
+plt.xlabel('Row')
+plt.ylabel('Carbon Amount')
+plt.grid()
+plt.title('Comparing Predictions on Testing Data to Truth')
+plt.legend()
 
 # %% Save to file
 WrapModel.save(model_name)
 
-# %% Show Mean CO2 from Dataset
-monthly_carbon, month_bins, lat_bins, lon_bins = features.calc_monthly_average(
-    lat=lat,
-    lon=lon,
-    days_since_03=days_since_03,
-    carbon=carbon,
-    lat_lims=(-50.0, 40.0, 2.0),
-    lon_lims=(-130.0, 150.0, 2.0),
-    month_lims=(0, 120, 6),
+# %% Predict Mean Carbon over Duration
+# -- CONFIGURE
+# Timeline
+start_date = datetime.datetime(2003, 1, 1)
+stop_date = datetime.datetime(2012, 1, 1)
+sim_step_size_months = 0.5  # months step size
+
+# Coordinates
+min_lat = -70.0
+max_lat = 70.0
+lat_step = 1.0
+min_lon = -150.0
+max_lon = 150.0
+lon_step = 1.0
+
+# -- DERIVE
+# Timeline
+start_time = start_date.timestamp()
+end_time = stop_date.timestamp()
+sim_step_size_sec = sim_step_size_months * 30 * 24 * 3600
+sim_times = np.arange(start_time, end_time, sim_step_size_sec)
+n_time = sim_times.size
+
+# Coordinates
+lat = np.arange(min_lat, max_lat, step=lat_step)
+lon = np.arange(min_lon, max_lon, step=lon_step)
+n_lat = lat.size
+n_lon = lon.size
+
+# %% Predict at Each Timestep
+time_grid, lat_grid, lon_grid = np.meshgrid(
+    sim_times,
+    lat,
+    lon,
+    indexing='ij'
 )
 
-# %% Predict for Same Grid
-n_month = month_bins.size
-n_lat = lat_bins.size
-n_lon = lon_bins.size
+X = features.preprocess(
+    lat=lat_grid,
+    lon=lon_grid,
+    epoch_time=time_grid
+)
 
-lat_grid, lon_grid = np.meshgrid(lat_bins, lon_bins, indexing='ij')
+carbon_pred = np.zeros((n_time, n_lat, n_lon))
 
-predict_carbon = np.zeros((n_month, n_lat, n_lon))
-for i_month in range(n_month):
-    day_since_03 = 30 * month_bins[i_month] * np.ones(n_lat * n_lon)
+predict_grid = WrapModel.predict(X)
 
-    x = features.preprocess(
-        lat=lat_grid.reshape((n_lat * n_lon)),
-        lon=lon_grid.reshape((n_lat * n_lon)),
-        days_since_03=day_since_03
-    )
+# %% Show Data at Each Time
+vmin = predict_grid.min()
+vmax = predict_grid.max()
+levels = np.percentile(predict_grid.flatten(), np.arange(0, 100, 5))
 
-    predict_carbon[i_month, :, :] = \
-        WrapModel.predict(x).reshape((n_lat, n_lon))
+for i_time, ep_time in enumerate(sim_times):
+    date_time = datetime.datetime.fromtimestamp(ep_time)  
 
-# %% Show Prediction vs. Measurement
-vmin, vmax = np.percentile(predict_carbon.flatten(), [5, 95]) 
-
-datas = {
-    'From Data': monthly_carbon,
-    'Predicted': predict_carbon
-}
-lon_min, lon_max = lon_bins.min(), lon_bins.max()
-lat_min, lat_max = lat_bins.min(), lat_bins.max()
-
-for i_month, month in enumerate(month_bins):
-    plt.figure(2, clear=True)
-    
-    for ii, (label, data) in enumerate(datas.items()):
-        plt.subplot(2, 1, ii+1)
-
-        # TODO-KT Is the data transposed? Should carbon increase right to left or
-        # other way
-        # plt.contour(lat_grid, lon_grid, carbon[i_month, :, :], levels=10)
-        plt.imshow(
-            data[i_month, :, :],
-            extent=[lon_min, lon_max, lat_min, lat_max],
-            cmap='jet',
-            vmin=vmin, vmax=vmax,
-            aspect='auto',
-            interpolation='bilinear',
-       )
-        plt.title('CO2')
-        plt.xlabel('Longitude (Degrees)')
-        plt.ylabel('Latitude (Degrees)')
-        plt.xlim([lon_min, lon_max])
-        plt.ylim([lat_min, lat_max])
-        plt.grid()
-        plt.title('Mean Carbon ({}) - Months Since 2003: {}'.format(
-            label, month))
-        plt.colorbar()
-
-    plt.pause(0.1)
-
-# %%
-predict_mean = predict_carbon.mean(axis=0)
-data_mean = monthly_carbon.mean(axis=0)
-
-datas = {
-    'From Data': data_mean,
-    'Predicted': predict_mean
-}
-
-plt.figure(5, clear=True)
-
-for ii, (label, data) in enumerate(datas.items()):
-    plt.subplot(1, 2, ii+1)
-
+    plt.figure(10, clear=True)
     plt.imshow(
-        data,
-        extent=[lon_min, lon_max, lat_min, lat_max],
-        aspect='auto'
+        predict_grid[i_time, :, :],
+        extent=[min_lon, max_lon, max_lat, min_lat],
+        cmap='jet',
+        vmin=vmin,
+        vmax=vmax,
+        aspect='auto',
     )
+    plt.colorbar()
+
+    contour = plt.contour(
+        lon_grid[0, ...],
+        lat_grid[0, ...],
+        predict_grid[i_time, :, :],
+        extent=[min_lon, max_lon, max_lat, min_lat],
+        cmap='jet_r',
+        vmin=vmin,
+        vmax=vmax,
+        # aspect='auto',
+        levels=levels,
+        # interpolation='bilinear',
+    )
+    # plt.clabel(contour, fmt='%2.2d', colors='k', fontsize=10)
+
     plt.title('CO2')
     plt.xlabel('Longitude (Degrees)')
     plt.ylabel('Latitude (Degrees)')
-    plt.xlim([lon_min, lon_max])
-    plt.ylim([lat_min, lat_max])
     plt.grid()
-    plt.title('Mean CO2 {} over duration'.format(label))
-    plt.colorbar()
+    plt.title('Carbon Map Prediction on {}'.format(date_time))
+    # plt.colorbar()
+
+    plt.pause(0.1)
+
+# %% Show Mean
+mean_prediction = np.mean(predict_grid, axis=0)
+vmin = mean_prediction.min()
+vmax = mean_prediction.max()
+
+plt.figure(11, clear=True)
+plt.imshow(
+    mean_prediction,
+    extent=[min_lon, max_lon, max_lat, min_lat],
+    cmap='jet',
+    vmin=vmin,
+    vmax=vmax,
+    aspect='auto',
+    interpolation='bilinear',
+)
+plt.title('CO2')
+plt.xlabel('Longitude (Degrees)')
+plt.ylabel('Latitude (Degrees)')
+plt.grid()
+plt.title('Mean Carbon Map Prediction from {} to {}'.format(
+    start_date, stop_date))
+plt.colorbar()

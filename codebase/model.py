@@ -66,7 +66,11 @@ class WrapperModel():
         if self.model_type == 'sklearn':
             pickle.dump(self.Model, open(path, 'wb'))
         elif self.model_type == 'tf':
-            self.Model.save(filepath=path)
+            keras.models.save_model(
+                model=self.Model,
+                filepath=path,
+                overwrite=True,
+            )
         else:
             raise ValueError('self.model_type {} either unset or invalid'.format(
                 self.model_type))

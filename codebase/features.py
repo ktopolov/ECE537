@@ -4,6 +4,7 @@ Pre-processing of features
 """
 import numpy as np
 import pyproj
+import datetime
 
 # %% Constants
 EARTH_RADIUS = 6.3781e6
@@ -29,7 +30,7 @@ def month_year_to_days_since_03(month, year):
     days_since_03 = 30 * months_since_03
     return days_since_03
 
-def preprocess(lat, lon, days_since_03):
+def preprocess(lat, lon, epoch_time):
     """Pre-process specific inputs to a standard form for input to the models
 
     Parameters
@@ -40,18 +41,27 @@ def preprocess(lat, lon, days_since_03):
     lon : (N) np.ndarray float
         Longitude (degrees)
 
-    days_since_03 : (N) np.ndarray int
-        Number of days since 2003
+    epoch_time : (N) np.ndarray int
+        Epoch time (s) for measurement
 
     Returns
     -------
     x : (N, 4)
         Pre-processed features
     """
-    months_since_03 = np.floor(days_since_03 / 30)
     # ecf = lla_to_ecf(lat=lat, lon=lon)
     # norm_ecf = ecf / EARTH_RADIUS
-    x = np.stack((lat, lon, months_since_03), axis=-1)
+    min_epoch_time = datetime.datetime(2003, 1, 1).timestamp()
+    max_epoch_time = datetime.datetime(2012, 1, 1).timestamp()
+
+    x = np.stack(
+        (
+            lat/90.0,
+            lon/180.0,
+            (epoch_time - min_epoch_time) / (max_epoch_time - min_epoch_time),
+        ),
+        axis=-1
+    )
     # x = np.concatenate(
     #     (norm_ecf, months_since_03[:, np.newaxis] / (12*10)),
     #     axis=-1
