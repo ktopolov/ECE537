@@ -6,7 +6,7 @@ Created on Tue Oct 19 19:21:25 2021
 """
 import numpy as np
 
-from codebase import kml
+from codebase import kmlw
 from codebase import model
 from codebase import features
 
@@ -15,6 +15,7 @@ n_lat, n_lon = 150, 100
 lat = np.linspace(-20.0, 20.0, num=n_lat)
 lon = np.linspace(-20.0, 20.0, num=n_lon)
 lat_grid, lon_grid = np.meshgrid(lat, lon, indexing='ij')
+
 
 # %% Predict Carbon Heatmap
 is_load = True
@@ -31,7 +32,7 @@ if is_load:
         lat=lat_grid.flatten(),
         lon=lon_grid.flatten()
     )
-    
+
     ecf = ecf.reshape((n_lat, n_lon, 3))  # back to grid
     norm_ecf = ecf / features.EARTH_RADIUS
 
@@ -51,12 +52,12 @@ else:
 # %%
 Writer = kml.KmlWriter(kml_file='myfile.kml')
 Writer.add_point(
-        lat=lat.mean(),
-        lon=lon.mean(),
-        rgba=(255, 255, 0, 255),
-        name='Center of ROI',
-        description='Center of the selected region of interest'
-    )
+    lat=lat.mean(),
+    lon=lon.mean(),
+    rgba=(255, 255, 0, 255),
+    name='Center of ROI',
+    description='Center of the selected region of interest'
+)
 
 Writer.add_contours(
     lat_grid,
@@ -69,5 +70,3 @@ Writer.add_contours(
 # 2) Figure out contour playback video in kml
 
 Writer.write()
-
-

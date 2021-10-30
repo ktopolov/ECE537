@@ -116,5 +116,11 @@ class WrapperModel():
 
         kwargs : {}
             Additional model kwargs based on self.model_type
+
+        Returns
+        -------
+        out :
+            Output from self.Model.fit()
         """
-        self.Model.fit(x, y, **kwargs)
+        out = self.Model.fit(x, y, **kwargs)
+        return out
