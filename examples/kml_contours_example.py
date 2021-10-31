@@ -6,7 +6,7 @@ Created on Tue Oct 19 19:21:25 2021
 """
 import numpy as np
 
-from codebase import kmlw
+from codebase import kml
 from codebase import model
 from codebase import features
 
@@ -15,7 +15,6 @@ n_lat, n_lon = 150, 100
 lat = np.linspace(-20.0, 20.0, num=n_lat)
 lon = np.linspace(-20.0, 20.0, num=n_lon)
 lat_grid, lon_grid = np.meshgrid(lat, lon, indexing='ij')
-
 
 # %% Predict Carbon Heatmap
 is_load = True
