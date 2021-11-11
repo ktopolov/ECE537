@@ -1,0 +1,36 @@
+{
+    // Editor control and appearance
+    "window.zoomLevel": 1,
+    "editor.mouseWheelZoom": true, // zoo in and out with ctrl + mouse wheel
+    "workbench.colorCustomizations": {
+        "contrastActiveBorder": "#df7614e8",
+        "contrastBorder": "#ffffff88",
+        "notebook.cellBorderColor": "#ffffffff"
+    },
+    "editor.minimap.enabled": false,
+    "editor.rulers": [
+        80,
+        100,
+        130
+    ],
+    "editor.fastScrollSensitivity": true,
+    // Terminal settings
+    "terminal.integrated.inheritEnv": true,
+    "terminal.integrated.defaultProfile.windows": "Ubuntu-20.04 (WSL)", // use WSL rather than windows cmd prompt
+    // Jupyter
+    "workbench.editorAssociations": {
+        "*.ipynb": "jupyter-notebook"
+    },
+    "notebook.cellToolbarLocation": {
+        "default": "right",
+        "jupyter-notebook": "left"
+    },
+    "jupyter.themeMatplotlibPlots": true,
+    // === Code format and completion ===
+    "editor.formatOnSave": true, // Format code to look nice on saving
+    "kite.showWelcomeNotificationOnStartup": false,
+    "python.languageServer": "Pylance", // improves autocompletion
+    // Python
+    "python.defaultInterpreterPath": "~/anaconda3/bin/python",
+    "jupyter.enableCellCodeLens": false,
+}

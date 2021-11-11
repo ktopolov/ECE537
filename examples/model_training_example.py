@@ -29,8 +29,8 @@ from codebase import features
 n_row = None  # number of rows to read from CSV
 output_type = 'xco2'  # xco2, xch4
 
-# data_dir = Path('/mnt/c/Users/ktopo/Desktop/ECE537/data')
-data_dir = Path('C:/Users/ktopo/Desktop/ECE537/data')
+data_dir = Path('/mnt/c/Users/ktopo/Desktop/ECE537/data')
+# data_dir = Path('C:/Users/ktopo/Desktop/ECE537/data')
 
 if output_type == 'xco2':
     csv_name = data_dir / Path('co2_data.csv')
@@ -53,9 +53,10 @@ n_feature = X.shape[-1]
 
 # Split test data from the rest. The rest will be used for K-fold x-validation
 test_size = 0.20
-X_remain, X_test, y_remain, y_test = train_test_split(X, y, test_size=test_size)
+X_remain, X_test, y_remain, y_test = train_test_split(
+    X, y, test_size=test_size)
 
-del X,y  # remove data we no longer need
+del X, y  # remove data we no longer need
 
 
 # %% Model configuration
@@ -68,7 +69,7 @@ n_fold = 3  # for cross-validation. If None, no cross-validation performed
 
 # TODO - Give these each ranges and allow automatic selection
 batch_sizes = [32]  # number of examples pased through at once for training
-n_epochs = [15]  # number of passes through dataset
+n_epochs = [3]  # number of passes through dataset
 learn_rates = [0.00001]  # May be unique to Adam optimizer
 loss_functions = ['mse']
 optimize_methods = ['adam']
@@ -135,14 +136,14 @@ for i_model, params in enumerate(zip(*hyperparams)):
     # Loop through folds and evaluate model for each
     for i_fold, (train_idx, validate_idx) in enumerate(
             kfold.split(X=X_remain, y=y_remain)):
-    
+
         # Extract training and cross-validation data
         X_train = X_remain[train_idx, :]
         y_train = y_remain[train_idx]
-    
+
         X_xvalidate = X_remain[validate_idx, :]
         y_xvalidate = y_remain[validate_idx]
-    
+
         # Define model
         layer_list = [
             keras.Input(shape=(n_feature,), name='Input'),
@@ -157,28 +158,20 @@ for i_model, params in enumerate(zip(*hyperparams)):
             layers.Dense(10, activation='relu'),
             layers.Dense(1, name='output', activation=None),
         ]
-        # layer_list = [
-        #     keras.Input(shape=(n_feature,), name='Input'),
-        #     layers.Dense(10, activation='relu'),
-        #     layers.Dense(50, activation='relu'),
-        #     layers.Dense(100, activation='relu'),
-        #     layers.Dense(50, activation='relu'),
-        #     layers.Dense(10, activation='relu'),
-        #     layers.Dense(1, name='output', activation=None),
-        # ]
+
         Model = keras.Sequential(layers=layer_list)
-    
+
         # Compile model
         if optimize_method == 'adam':
             optimizer = optimizers.Adam(learning_rate=learn_rate)
         else:
             raise ValueError('Unknown optimize_method')
-    
+
         if loss_function == 'mse':
             loss = losses.MeanSquaredError()
         else:
             raise ValueError('Unknown loss_function')
-    
+
         Model.compile(
             optimizer=optimizer,  # Create optimizer object and pass in with learning
             loss=loss,
@@ -198,7 +191,7 @@ for i_model, params in enumerate(zip(*hyperparams)):
             epochs=n_epoch,
             verbose=verbosity
         )
-    
+
         # Generate generalization metrics. TODO-add more metrics
         train_loss[i_fold] = Model.evaluate(
             x=X_train,
@@ -210,7 +203,7 @@ for i_model, params in enumerate(zip(*hyperparams)):
             y=y_xvalidate,
             verbose=verbosity
         )
-        
+
         logger.info(f'\nFold {i_fold}')
         logger.info(f'Training loss: {train_loss[i_fold]}')
         logger.info(f'Cross-validation loss: {fold_loss[i_fold]}')
@@ -219,13 +212,19 @@ for i_model, params in enumerate(zip(*hyperparams)):
     mean_fold_loss = fold_loss.mean()
     logger.info(f'Mean Training loss: {mean_train_loss}')
     logger.info(f'Mean Cross-validation loss: {mean_fold_loss}')
- 
+
     # Hang onto best-performing model
     if mean_fold_loss < best_validation_loss:
         best_validation_loss = mean_fold_loss
         best_params = params
         BestModel = Model
         best_idx = i_model
+
+# %% Save Best Model
+keras.models.save_model(
+    model=BestModel,
+    filepath='../data/BestModel.mod'
+)
 
 # %% Predict and View if Trend over Time Matches Data
 lat, lon = 20.0, 50.0
@@ -279,25 +278,25 @@ plt.colorbar()
 
 # %% Plot Loss vs. Epoch
 loss = np.array([15696.4100,
-4771.2448,
-7.5060,
-6.9503,
-6.8240,
-6.7647,
-6.7335,
-6.7125,
-6.6915,
-6.6797,
-6.6686,
-6.6575,
-6.6517,
-6.6450,
-6.6391,
-6.6361,
-6.7443,
-6.7068,
-])
-epoch=  np.arange(len(loss))
+                 4771.2448,
+                 7.5060,
+                 6.9503,
+                 6.8240,
+                 6.7647,
+                 6.7335,
+                 6.7125,
+                 6.6915,
+                 6.6797,
+                 6.6686,
+                 6.6575,
+                 6.6517,
+                 6.6450,
+                 6.6391,
+                 6.6361,
+                 6.7443,
+                 6.7068,
+                 ])
+epoch = np.arange(len(loss))
 
 plt.figure(20, clear=True)
 plt.bar(epoch, loss)
@@ -305,4 +304,3 @@ plt.grid()
 plt.title('Loss vs. Epoch')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-
