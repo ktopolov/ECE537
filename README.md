@@ -46,8 +46,9 @@ python /mnt/c/Users/ktopo/Desktop/ECE537/cli/visualize_data.py --co2-csv /mnt/c/
   
 Input arguments are:  
 *  `--mode`: Can be `region` or `location`.  
-*  `--start-time`: Starting month and year of simulation. Stored as `--start-time month year`
-*  `--months`: Number of months to simulate  
+*  `--start-date`: Start date and year of simulation. Stored as `--start-time DD MM YYYY`
+*  `--stop-date`: Stop date of simulation. Stored as `--stop-date DD MM YYYY`  
+*  `--sim-step`: Tiem resolution of simulation. Options are any one of the following: `daily, weekly, monthly, quarterly, anually`
 *  `--lat-bounds`: Minimum and maximum latitude boundaries (degrees, -90.0 to 90.0) entered as `min max`. Only needed for `--mode region`
 *  `--lon_bounds`: Minimum and maximum longitude boundaries (degrees, -180.0 to 180.0) entered as `min max`. Only needed for `--mode region`  
 *  `--lat-res`: Resolution or spacing of latitude grid samples (deg); only for `--mode region`
