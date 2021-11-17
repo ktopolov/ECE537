@@ -64,6 +64,7 @@ Example command line calls are:
 ```  
   
 # External Tools  
+## TensorBoard  
 TensorBoard is a tool used to visualize the machine learning results. This will be installed by default with TensorFlow itself. It can track model performance in a graphical way real-time and also hyperparameter effects, parameter distributions, etc.  
   
 To use TensorBoard, the code should create a **callback** with a user-specified output directory where TensorBoard logs will sit:  
