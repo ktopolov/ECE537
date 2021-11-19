@@ -2,34 +2,35 @@
 """
 Application to leverage trained model for metric reporting
 """
+from codebase import model, features, kml
+import pandas as pd
+import datetime
+import logging
+from pathlib import Path
+import sys
+import argparse
+import numpy as np
+from matplotlib import cm
+import matplotlib.pyplot as plt
+import warnings
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'   # shut tensorflow up
-import warnings
 warnings.filterwarnings('ignore', category=UserWarning)  # ignore sklearn
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
-import numpy as np
-import argparse
-import sys
-from pathlib import Path
-import logging
-import datetime
-import pandas as pd
-
-from codebase import model, features, kml
 
 # %%
-def _setup_parser():
+
+def _define_cli_args():
     """Create parser to accept input arguments
-    
+
     Returns
     -------
     parser : argparse.ArgumentParser
         Instantiated parser object
     """
     # Required
-    parser = argparse.ArgumentParser(description='Use predictive model for optimal site planning')
+    parser = argparse.ArgumentParser(
+        description='Use predictive model for optimal site planning')
     parser.add_argument('--mode', dest='mode', default='region', type=str,
                         help='Run mode', choices=['region', 'location'])
     parser.add_argument('--start-date', dest='start_date', nargs=3, type=int,
@@ -59,9 +60,8 @@ def _setup_parser():
     # Optional
     parser.add_argument('--out-dir', dest='out_dir', type=str,
                         help='Output file directory; defaults to \'./output\'', default='./output')
-    parser.add_argument('--log-file', dest='log_file', type=str, default=None,
-                        help='Path to output log file; if not entered, prints to stdout')
     return parser
+
 
 def _setup_timeline(start_date, stop_date, sim_step, logger=None):
     """Setup simulation timeline
@@ -115,6 +115,7 @@ def _setup_timeline(start_date, stop_date, sim_step, logger=None):
 
     return sim_times
 
+
 def _setup_locs(locs, logger=None):
     """Convert list of lat, lon locations to arrays
 
@@ -152,12 +153,13 @@ def _setup_locs(locs, logger=None):
         idx = 2*ii
         lats[ii] = locs[idx]
         lons[ii] = locs[idx+1]
-        
+
         if logger is not None:
             logging.debug('(lat{}, lon{}): ({}, {})'.format(
                 ii, ii, lats[ii], lons[ii]))
 
     return lats, lons
+
 
 def _setup_spatial_support(
     lat_bounds,
@@ -167,7 +169,7 @@ def _setup_spatial_support(
     logger=None
 ):
     """Setup vector of latitudes and longitudes
-    
+
     Parameters
     ----------
     lat_bounds : (2) float
@@ -208,6 +210,8 @@ def _setup_spatial_support(
     return lats, lons
 
 # %%
+
+
 def main():
     """Main app"""
     # %% Setup
@@ -215,11 +219,17 @@ def main():
     # to try/except properly
 
     # CLI Parsing
-    parser = _setup_parser()
+    parser = _define_cli_args()
     args = parser.parse_args()
+
+    # File I/O
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)  # make directory if not exists
 
     # Logging
     FORMAT = '[%(levelname)-s]: %(asctime)s \t %(message)s'
+    log_path = out_dir / 'status.log'
+    print('Logging to {}'.format(log_path))
     logging.basicConfig(
         filename=args.log_file,  # if None, defaults to stdout
         stream=sys.stdout,
@@ -227,6 +237,7 @@ def main():
         format=FORMAT
     )
     logger = logging.getLogger('LOG_BUDDY')
+    logger.info('Output Directory: {}\n'.format(out_dir))
 
     # CLI call
     sep = ' '
@@ -239,12 +250,6 @@ def main():
         logger.error('Unknown --mode {}'.format(args.mode))
         return
     logger.info('Mode: {}\n'.format(args.mode))
-
-    # File I/O
-    logger.info('=== FILE I/O ===')
-    out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)  # make directory if not exists
-    logger.info('Output Directory: {}\n'.format(out_dir))
 
     # Timeline - sample points throughout the duration of the simulation
     logger.info('=== TIMELINE ===')
@@ -305,7 +310,8 @@ def main():
         n_location = lats.size
         lat_grid = np.repeat(lats[np.newaxis, :], axis=0, repeats=n_time)
         lon_grid = np.repeat(lons[np.newaxis, :], axis=0, repeats=n_time)
-        time_grid = np.repeat(sim_times[:, np.newaxis], axis=-1, repeats=n_location)
+        time_grid = np.repeat(
+            sim_times[:, np.newaxis], axis=-1, repeats=n_location)
 
     else:  # region mode
         lats, lons = _setup_spatial_support(
@@ -325,7 +331,8 @@ def main():
         )
 
     grid_shape = time_grid.shape
-    logger.info('Prediction Size: (n_time, n_lat, n_lon) = {}'.format(grid_shape))
+    logger.info(
+        'Prediction Size: (n_time, n_lat, n_lon) = {}'.format(grid_shape))
     logger.info('Total Predictions: {}\n'.format(np.prod(grid_shape)))
 
     # %% Prediction
@@ -365,7 +372,7 @@ def main():
         vmax = mean_carbon.max()
         mean_carbon_norm = (mean_carbon - vmin) / (vmax - vmin)
 
-        # Map to color values (0, 255)        
+        # Map to color values (0, 255)
         colormap = cm.get_cmap('jet')
         norm_colors = colormap(mean_carbon_norm)
         print(norm_colors.shape)
@@ -424,7 +431,7 @@ def main():
     Kml.write()
     logger.info('{} written'.format(kml_file))
 
+
 # %%
 if __name__ == '__main__':
     main()
-

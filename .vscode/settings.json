@@ -1,6 +1,6 @@
 {
     // Editor control and appearance
-    "window.zoomLevel": 1,
+    "window.zoomLevel": 3,
     "editor.mouseWheelZoom": true, // zoo in and out with ctrl + mouse wheel
     "workbench.colorCustomizations": {
         "contrastActiveBorder": "#df7614e8",
@@ -9,11 +9,11 @@
     },
     "editor.minimap.enabled": false,
     "editor.rulers": [
-        80,
+        79,
         100,
         130
     ],
-    "editor.fastScrollSensitivity": true,
+    "editor.fastScrollSensitivity": 6.0,
     // Terminal settings
     "terminal.integrated.inheritEnv": true,
     "terminal.integrated.defaultProfile.windows": "Ubuntu-20.04 (WSL)", // use WSL rather than windows cmd prompt
