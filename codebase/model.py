@@ -16,6 +16,7 @@ class WrapperModel():
         """Initialize"""
         self.Model = None
         self.model_type = None
+        self.__ready = False  # ready once initialized from model
 
     def init_from_model(self, Model):
         """Initialize wrapper from a Model either from sklearn or TensorFlow
@@ -34,6 +35,8 @@ class WrapperModel():
             self.model_type = 'tf'
         else:
             raise ValueError('Unknown Model type {}'.format(model_type_full))
+
+        self.__ready = True
 
     def init_from_file(self, model_type, path):
         """Initialize wrapper from a Model either from sklearn or TensorFlow
@@ -54,6 +57,17 @@ class WrapperModel():
             self.Model = keras.models.load_model(path)
         else:
             raise ValueError('model_type {} unknown'.format(model_type))
+
+        self.__ready = True
+
+    def ready(self):
+        """Whether model is ready for prediction
+
+        Returns
+        -------
+        ready : bool
+        """
+        return self.__ready
 
     def save(self, path):
         """Save model to file
@@ -85,7 +99,7 @@ class WrapperModel():
 
         Returns
         -------
-        y : (N) np.ndarray float
+        y : (...) np.ndarray float
             Predicted output
         """
         if np.ndim(x) == 1:

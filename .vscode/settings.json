@@ -27,7 +27,7 @@
     },
     "jupyter.themeMatplotlibPlots": true,
     // === Code format and completion ===
-    "editor.formatOnSave": true, // Format code to look nice on saving
+    // "editor.formatOnSave": true, // Format code to look nice on saving
     "kite.showWelcomeNotificationOnStartup": false,
     "python.languageServer": "Pylance", // improves autocompletion
     // Python
