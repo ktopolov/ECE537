@@ -46,8 +46,9 @@ python /mnt/c/Users/ktopo/Desktop/ECE537/cli/visualize_data.py --co2-csv /mnt/c/
   
 Input arguments are:  
 *  `--mode`: Can be `region` or `location`.  
-*  `--start-time`: Starting month and year of simulation. Stored as `--start-time month year`
-*  `--months`: Number of months to simulate  
+*  `--start-date`: Start date and year of simulation. Stored as `--start-time DD MM YYYY`
+*  `--stop-date`: Stop date of simulation. Stored as `--stop-date DD MM YYYY`  
+*  `--sim-step`: Tiem resolution of simulation. Options are any one of the following: `daily, weekly, monthly, quarterly, anually`
 *  `--lat-bounds`: Minimum and maximum latitude boundaries (degrees, -90.0 to 90.0) entered as `min max`. Only needed for `--mode region`
 *  `--lon_bounds`: Minimum and maximum longitude boundaries (degrees, -180.0 to 180.0) entered as `min max`. Only needed for `--mode region`  
 *  `--lat-res`: Resolution or spacing of latitude grid samples (deg); only for `--mode region`
@@ -60,4 +61,43 @@ Example command line calls are:
   
 ```  
 --mode location --locs 20.0 30.0 15.5 22.3 --start-time 10 2022 --months 36
+```  
+  
+# External Tools  
+## TensorBoard  
+TensorBoard is a tool used to visualize the machine learning results. This will be installed by default with TensorFlow itself. It can track model performance in a graphical way real-time and also hyperparameter effects, parameter distributions, etc.  
+  
+To use TensorBoard, the code should create a **callback** with a user-specified output directory where TensorBoard logs will sit:  
 ```
+tb_callback = keras.callbacks.TensorBoard(
+    log_dir=log_dir,
+    histogram_freq=1,
+)
+```
+This clalback is then passed into the fitting for a Keras model:  
+```
+history = Model.fit(
+  x=X_train,
+  y=y_train,
+  batch_size=hparams['batch_size'],
+  epochs=hparams['n_epoch'],
+  verbose=verbosity,
+  validation_data=(X_cross, y_cross),
+  callbacks=[
+      tb_callback,  # log metrics
+      hp_callback,  # log hparams
+  ],
+)
+```  
+Any metrics that are asked to be tracked during `Model.compile()` will appear in the logs. Cross-validation and training data also.  
+  
+To use TensorBoard, begin training your model. While training, or after it finishes, run `tensorboard --logdir <path_to_logs>` on the terminal, where th epath to the logs is a path either **directly** containing the Tensorboard logs (called `log_dir` in the example above), or it could contain many subfolders, each of which contain a single model's log directory.  
+*  the first option can be used to look at a single model  
+*  the second option allows us to make a different TensorBoard log directory for each of N models (for example, in hyperparameter training), and then compare their results.
+
+After running that on the terminal, we see:
+```
+Serving TensorBoard on localhost; to expose to the network, use a proxy or pass --bind_all
+TensorBoard 2.7.0 at http://localhost:6006/ (Press CTRL+C to quit)
+```  
+Copythe `http` address and paste it into an internet browser. Provided that you passed a valid TensorBoard log directory and there is already some file output there, TensorBoard will start showing you metrics.
