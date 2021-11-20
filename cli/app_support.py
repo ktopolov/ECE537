@@ -199,7 +199,9 @@ def write_kml_region(
         contour_path.absolute(),
         np.flip(mean_carbon_rgb, axis=0),
     )
-    logger.info('{} written'.format(contour_path))
+
+    if logger is not None:
+        logger.info('{} written'.format(contour_path))
 
     # Write KML file
     Kml = kml.KmlWriter(kml_file=kml_file)
@@ -219,7 +221,9 @@ def write_kml_region(
         levels=30
     )
     Kml.write()
-    logger.info('{} written'.format(kml_file))
+
+    if logger is not None:
+        logger.info('{} written'.format(kml_file))
 
 
 def write_kml_location(
@@ -278,4 +282,6 @@ def write_kml_location(
             description=description,
         )
     Kml.write()
-    logger.info('{} written'.format(kml_file))
+
+    if logger is not None:
+        logger.info('{} written'.format(kml_file))

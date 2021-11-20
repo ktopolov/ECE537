@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import os
 import datetime
+from pathlib import Path
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'   # shut tensorflow up
 
 import app_support as app
@@ -13,7 +14,7 @@ from codebase import model, features
 
 # %% Constants/Formatting
 WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 1500
+WINDOW_WIDTH = 1000
 
 FIG_HEIGHT = 5
 FIG_WIDTH = 10
@@ -35,7 +36,7 @@ class Ui():
         self.window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
 
         # Add groups
-        self.__add_model_group(
+        self.__add_io_group(
             widget=self.window,
             grid_param={'row': 0, 'column': 0, 'columnspan': 2}
         )
@@ -45,12 +46,12 @@ class Ui():
         )
 
         # Tabs for each mode
-        tab_control = ttk.Notebook(self.window)
-        region_tab = ttk.Frame(tab_control)
-        location_tab = ttk.Frame(tab_control)
-        tab_control.add(region_tab, text='Region')
-        tab_control.add(location_tab, text='Location')
-        tab_control.grid(row=2, column=0)
+        self.tab_control = ttk.Notebook(self.window)
+        region_tab = ttk.Frame(self.tab_control)
+        location_tab = ttk.Frame(self.tab_control)
+        self.tab_control.add(region_tab, text='Region')
+        self.tab_control.add(location_tab, text='Location')
+        self.tab_control.grid(row=2, column=0)
 
         # Add region-based to region tab
         self.__add_region_group(
@@ -80,7 +81,7 @@ class Ui():
         self.window.mainloop()
 
     # %% Groups
-    def __add_model_group(self, widget, grid_param):
+    def __add_io_group(self, widget, grid_param):
         group = ttk.LabelFrame(widget, text='Model')
         group.grid(**grid_param)
 
@@ -91,12 +92,21 @@ class Ui():
         )
         model_dir = tk.StringVar()
         model_dir.set('No Model Selected')
-        load_model_label = tk.Label(
-            group, textvariable=model_dir, width=50)
-        load_model_button.grid(row=0, column=0)  # position within group
-        load_model_label.grid(row=0, column=1, columnspan=3)
+        load_model_label = tk.Label(group, textvariable=model_dir, width=50)
 
-        self.groups['model'] = {
+        dump_output_button = tk.Button(
+            group,
+            text='Dump Output',
+            bg='blue',
+            fg='white',
+            command=self.__dump_output_pressed
+        )
+
+        load_model_button.grid(row=0, column=0)  # position within group
+        load_model_label.grid(row=0, column=1)
+        dump_output_button.grid(row=0, column=2)
+
+        self.groups['io'] = {
             'group': group,
             'vars': {'model_dir': model_dir}
         }
@@ -318,6 +328,18 @@ class Ui():
             'vars': {'fig': fig}
         }
 
+    def __get_current_tab(self):
+        """Return name of current open tab
+
+        Returns
+        -------
+        current_tab : str
+            Name of current open tab; 'Region' or 'Location'
+        """
+        current_tab = self.tab_control.tab(self.tab_control.select(), 'text')
+        return current_tab
+
+
     # %% Callbacks
     # -- Sliders
     def __interp_changed(self, interp):
@@ -338,8 +360,8 @@ class Ui():
     # -- Buttons
     def __load_model_pressed(self):
         """Load TensorFlow given a directory"""
-        model_group_vars = self.groups['model']['vars']
-        model_dir = model_group_vars['model_dir']
+        io_group_vars = self.groups['io']['vars']
+        model_dir = io_group_vars['model_dir']
         dir = filedialog.askdirectory(initialdir=model_dir)
         # to update label to show directory
         model_dir.set('Loading Model...')
@@ -349,6 +371,36 @@ class Ui():
             model_dir.set(dir)
         except:
             model_dir.set('Invalid TensorFlow Model Directory')
+
+    def __dump_output_pressed(self):
+        """Save KML and CSV prediction output based on current tab"""
+        out_dir = filedialog.askdirectory(initialdir='.')
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)  # make if does not exist
+
+        open_tab = self.__get_current_tab().lower()
+
+        if open_tab == 'location':
+            results = self.sim_results_location
+            app.write_kml_location(
+                lats=results['lats'],  # lats are repeated for every day
+                lons=results['lons'],  # lons are repeated for every day
+                carbon=results['carbon'].mean(axis=0),  # average carbon
+                kml_dir=out_dir,
+            )
+        else:
+            results = self.sim_results_region
+            lat_grid, lon_grid = np.meshgrid(
+                results['lats'],
+                results['lons'],
+                indexing='ij'
+            )
+            app.write_kml_region(
+                lat_grid=lat_grid,
+                lon_grid=lon_grid,
+                carbon=results['carbon'].mean(axis=0),
+                kml_dir=out_dir,
+            )
 
     def __simulate_pressed(self):
         timeline_group_vars = self.groups['timeline']['vars']
@@ -393,8 +445,9 @@ class Ui():
             sim_status.set(str(err))
             return
 
-        # FIXME-KT: Set this based on which tab is open
-        sim_mode = 'location'
+        # Returns 'region' or 'location' depending on which of the two tabs is
+        # open
+        sim_mode = self.__get_current_tab().lower()
 
         if sim_mode == 'location':
             location_group_vars = self.groups['location']['vars']
@@ -485,9 +538,9 @@ class Ui():
         fig = region_render_group_vars['fig']
 
         region_plot_group_vars = self.groups['region_plot']['vars']
-        interp_type = region_render_group_vars['interp_type']
-        cmap_type = region_render_group_vars['cmap_type']
-        time_slider = region_render_group_vars['time_slider']
+        interp_type = region_plot_group_vars['interp_type']
+        cmap_type = region_plot_group_vars['cmap_type']
+        time_slider = region_plot_group_vars['time_slider']
 
         ax0 = fig.axes[0]
         ax0.clear()
@@ -522,6 +575,7 @@ class Ui():
         sim_percent = time_slider.get()
         n_times = sim_times.size
         idx = int(np.round(sim_percent / 100 * n_times))
+        idx = min(max(0, idx), n_times-1)  # restrict 0, n_times-1
         inst_time = sim_times[idx]
         inst_date = datetime.datetime.fromtimestamp(inst_time).strftime(fmt)
 
@@ -563,7 +617,12 @@ class Ui():
         for i_loc in range(n_loc):
             lat, lon = lats[i_loc], lons[i_loc]
             # Convert sim times to date
-            ax0.plot(sim_times, carbon[:, i_loc], label=f'Lat: {lat}, Lon: {lon}')
+            ax0.plot(
+                sim_times,
+                carbon[:, i_loc],
+                label=f'Lat: {lat}, Lon: {lon}',
+                linewidth=1.5
+            )
 
         ax0.set_xlabel('Epoch Time (TODO-Use Date)')
         ax0.set_ylabel('Carbon')

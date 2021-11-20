@@ -290,7 +290,7 @@ def _load_data(data_type):
     """
     n_row = None  # number of rows to read from CSV; None reads all
 
-    data_dir = Path('/mnt/c/Users/ktopo/Desktop/ECE537/data')  # WSL Linux
+    data_dir = Path('/home/ktopolov/ECE537_data')  # WSL Linux
     # data_dir = Path('C:/Users/ktopo/Desktop/ECE537/data')  # Windows
 
     csv_file = 'co2_data.csv' if data_type == 'xco2' else 'ch4_data.csv'
@@ -327,15 +327,15 @@ def main():
 
     # Split test data from the rest. The rest will be used for K-fold x-validation
     X_train, X_cross, X_test, y_train, y_cross, y_test = split_data(
-        X=X, y=y, test_percent=0.55, cross_percent=0.25)
+        X=X, y=y, test_percent=0.15, cross_percent=0.15)
     del X, y  # remove data we no longer need
 
     # -- Setup Model
     # Hyperparameters
     HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([64]))
-    HP_N_EPOCH = hp.HParam('n_epoch', hp.Discrete([3]))
+    HP_N_EPOCH = hp.HParam('n_epoch', hp.Discrete([10]))
     HP_LEARNING_RATE = hp.HParam(
-        'learning_rate', hp.Discrete([1e-5]))
+        'learning_rate', hp.Discrete([1e-4]))
     HP_LOSS = hp.HParam('loss', hp.Discrete(['mse']))
     HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
     hyperparameters = [

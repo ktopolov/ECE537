@@ -29,12 +29,14 @@ def main():
 
     # %% Read from CSV
     if args.co2_path is not None:
+        print('Reading CO2 Data...')
         df = pd.read_csv(args.co2_path, nrows=args.rows)
 
         lat = df['latitude'].to_numpy()
         lon = df['longitude'].to_numpy()
         
         # %% Show Where Data Samples Are
+        print('Plotting CO2 Data...')
         plt.figure(0, clear=True)
         plt.hist2d(
             x=lon,
@@ -93,12 +95,14 @@ def main():
     
     # %% Read from CSV
     if args.ch4_path is not None:
+        print('Reading CH4 Data...')
         df = pd.read_csv(args.ch4_path, nrows=args.rows)
 
         lat = df['latitude'].to_numpy()
         lon = df['longitude'].to_numpy()
         
         # -- Show Where Data Samples Are
+        print('Plotting CH4 Data...')
         plt.figure(3, clear=True)
         plt.hist2d(
             x=lon,
@@ -149,12 +153,13 @@ def main():
             years_since_03[n_moving_avg::n_skip],
             ch4_mov_avg[n_moving_avg::n_skip]
         )
-        plt.xlabel('Months Since 2003')
+        plt.xlabel('Years Since 2003')
         plt.ylabel('ppm')
         plt.grid()
         plt.title('{} Sample Global Moving Average CH4 Concentration in ppb'.format(n_moving_avg))
 
     plt.show()
+    print('Completed')
 
 if __name__ == '__main__':
     main()
