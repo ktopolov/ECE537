@@ -13,14 +13,14 @@ from codebase import model, features
 
 # %% Constants/Formatting
 WINDOW_HEIGHT = 800
+WINDOW_WIDTH = 1500
 
+# Where to put each group in the UI
 GROUP_GRID_PARAM = {
-    'model': {'row': 0, 'column': 0, 'columnspan': 4},
-    'timeline': {'row': 1, 'column': 0, 'columnspan': 4},
-    'region': {'row': 1, 'column': 4, 'columnspan': 4},
-    'location': {'row': 1, 'column':4, 'columnspan': 4},
-    'plot': {'row': 3, 'column': 0, 'columnspan': 2},
-    'render': {'row': 4, 'column': 0, 'columnspan': 8},
+    'model': {'row': 0, 'column': 0, 'columnspan': 2},
+    'timeline': {'row': 1, 'column': 0, 'columnspan': 2},
+    'region_tab': {'row': 2, 'column': 0, 'columnspan': 8},
+    'location_tab': {'row': 2, 'column': 0, 'columnspan': 8},
 }
 
 # %% UI
@@ -31,41 +31,49 @@ class Ui():
         """Construct application"""
         # Stored data
         self.Model = model.WrapperModel()  # to be loaded later
-        self.sim_results = {}  # stores all simulation results
-
-        # TODO-Remove
-        n_lat, n_lon = 16, 32
-        self.lat_axis = np.linspace(-90.0, 90.0, num=n_lat)
-        self.lon_axis = np.linspace(-180.0, 180.0, num=n_lon)
-        self.predict_grid = np.sinc(self.lat_axis / 10.0)[:, np.newaxis] \
-            + np.sinc(self.lon_axis / 10.0) \
-            + 0.01 * np.random.randn(n_lat, n_lon)  # np.zeros((n_lat, n_lon))
+        self.sim_results_region = {}  # stores all region simulation results
+        self.sim_results_location = {}  # stores all region simulation results
 
         self.window = None  # overall window widget
         self.groups = {}  # groups belonging to UI
 
-        # Window setup parameters
-        self.__setup_window()
-        self.window.mainloop()
-
-    # UI Setup
-    def __setup_window(self):
-        """Create the window to render"""
-        # Main window
-        width = 1500
-        height = 800
         self.window = tk.Tk()
         self.window.title('Predictive Carbon Modeling')
-        self.window.geometry(f'{width}x{height}')
+        self.window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
 
+        # Add groups
         self.__add_model_group(widget=self.window, grid_param=GROUP_GRID_PARAM['model'])
         self.__add_timeline_group(widget=self.window, grid_param=GROUP_GRID_PARAM['timeline'])
-        self.__add_plot_group(widget=self.window, grid_param=GROUP_GRID_PARAM['plot'])
-        self.__add_render_group(widget=self.window, grid_param=GROUP_GRID_PARAM['render'])
 
-        self.__add_region_group(widget=self.window, grid_param=GROUP_GRID_PARAM['region'])
-        self.__add_location_group(widget=self.window, grid_param=GROUP_GRID_PARAM['location'])
-        self.__toggle_mode()  # Show only region or location based on selected mode
+        # Tabs for each mode
+        tab_control = ttk.Notebook(self.window)
+        region_tab = ttk.Frame(tab_control)
+        location_tab = ttk.Frame(tab_control)
+        tab_control.add(region_tab, text='Region')
+        tab_control.add(location_tab, text='Location')
+        tab_control.grid(row=5, column=0)
+
+        # Add region-based to region tab
+        self.__add_region_group(
+            widget=region_tab,
+            grid_param={'row': 0, 'column': 0, 'columnspan': 2}
+        )
+        self.__add_region_plot_group(
+            widget=region_tab,
+            grid_param={'row': 0, 'column': 2, 'columnspan': 2}
+        )
+        self.__add_region_render_group(
+            widget=region_tab,
+            grid_param={'row': 1, 'column': 0, 'columnspan': 8}
+        )
+
+        # Add location-based to location tab
+        self.__add_location_group(
+            widget=location_tab,
+            grid_param={'row': 0, 'column': 0, 'columnspan': 2}
+        )
+        # Halt execution
+        self.window.mainloop()
 
     # %% Groups
     def __add_model_group(self, widget, grid_param):
@@ -93,8 +101,8 @@ class Ui():
         stop_date_label = tk.Label(self.groups['timeline'], text='Stop Date (DD/MM/YYYY)')
         sim_step_label = tk.Label(self.groups['timeline'], text='Simulation Step')
 
-        self.start_date_str = tk.StringVar('')
-        self.stop_date_str = tk.StringVar('')
+        self.start_date_str = tk.StringVar()
+        self.stop_date_str = tk.StringVar()
         self.sim_step = tk.StringVar()
 
         start_date_entry = tk.Entry(self.groups['timeline'], textvariable=self.start_date_str)
@@ -120,22 +128,6 @@ class Ui():
 
         self.mode = tk.StringVar()
         self.mode.set('region')
-        region_button = tk.Radiobutton(
-            self.groups['timeline'], 
-            text='region',
-            padx=20, 
-            variable=self.mode, 
-            value='region',
-            command=self.__toggle_mode
-        )
-        location_button = tk.Radiobutton(
-            self.groups['timeline'], 
-            text='location',
-            padx=20, 
-            variable=self.mode, 
-            value='location',
-            command=self.__toggle_mode
-        )
 
         start_date_label.grid(row=0, column=0)
         start_date_entry.grid(row=0, column=1)
@@ -143,10 +135,8 @@ class Ui():
         stop_date_entry.grid(row=1, column=1)
         sim_step_label.grid(row=0, column=2)
         sim_step_dropdown.grid(row=0, column=3)
-        region_button.grid(row=1, column=2)
-        location_button.grid(row=1, column=3)
-        simulate_button.grid(row=2, column=0)
-        sim_status_label.grid(row=2, column=1)
+        simulate_button.grid(row=1, column=2)
+        sim_status_label.grid(row=1, column=3)
 
     def __add_region_group(self, widget, grid_param):
         """Group for simulation parameters"""
@@ -206,31 +196,38 @@ class Ui():
         lons_label.grid(row=1, column=0)
         lons_entry.grid(row=1, column=1)
 
-    def __add_plot_group(self, widget, grid_param):
+    def __add_region_plot_group(self, widget, grid_param):
         """Group for all plot configuration"""
-        self.groups['plot'] = ttk.LabelFrame(widget, text='Plot Configuration')
-        self.groups['plot'].grid(**grid_param)
+        self.groups['region_plot'] = ttk.LabelFrame(widget, text='Plot Configuration')
+        self.groups['region_plot'].grid(**grid_param)
 
-        self.interp_label = tk.Label(self.groups['plot'], text='Interpolation Type')
-        interp_options = [
-            'none', 'antialiased', 'nearest', 'bilinear', 'bicubic',
-            'spline16', 'spline36', 'hanning', 'hamming', 'hermite',
-            'kaiser', 'quadric', 'catrom', 'gaussian', 'bessel', 'mitchell',
-            'sinc', 'lanczos', 'blackman'
-        ]
-        self.interp_type = interp_options[0]
-        interp_type = tk.StringVar()  # no need to store in self since command passes value
-        interp_type.set(interp_options[0])  # default
+        # Interpolation
+        self.interp_label = tk.Label(self.groups['region_plot'], text='Interpolation Type')
+        interp_options = ['none', 'bilinear', 'bicubic', 'hanning', 'sinc']
+        self.interp_type = tk.StringVar()
+        self.interp_type.set(interp_options[0])  # default
         self.interp_dropdown = tk.OptionMenu(
-            self.groups['plot'],
-            interp_type,
+            self.groups['region_plot'],
+            self.interp_type,
             *interp_options,
-            command=self.__interp_changed,
+            command=self.__interp_changed,  # replot when interp changes
+        )
+
+        # Colormap
+        self.cmap_label = tk.Label(self.groups['region_plot'], text='Colormap')
+        cmap_options = ['jet', 'magma', 'gray', 'hot', 'cool', 'seismic']
+        self.cmap_type = tk.StringVar()
+        self.cmap_type.set(cmap_options[0])  # default
+        self.cmap_dropdown = tk.OptionMenu(
+            self.groups['region_plot'],
+            self.cmap_type,
+            *cmap_options,
+            command=self.__cmap_changed,  # re-plot when cmap changes
         )
 
         # Simulation timescale slider
         self.time_slider = tk.Scale(
-            self.groups['plot'],
+            self.groups['region_plot'],
             from_=0.0,
             to=100.0,
             sliderlength=20,  # size of slider
@@ -243,33 +240,38 @@ class Ui():
 
         self.interp_label.grid(row=0, column=0)
         self.interp_dropdown.grid(row=0, column=1)
+        self.cmap_label.grid(row=0, column=2)
+        self.cmap_dropdown.grid(row=0, column=3)
         self.time_slider.grid(row=1, column=0, columnspan=2)
 
-    def __add_render_group(self, widget, grid_param):
+    def __add_region_render_group(self, widget, grid_param):
         """Group where figure(s) will be rendered"""
-        self.groups['render'] = ttk.LabelFrame(widget)
-        self.groups['render'].grid(**grid_param)
+        self.groups['region_render'] = ttk.LabelFrame(widget)
+        self.groups['region_render'].grid(**grid_param)
 
         self.fig, ax = plt.subplots(nrows=1, ncols=2)
         self.fig.set_figheight(5)
         self.fig.set_figwidth(10)
 
-        canvas = FigureCanvasTkAgg(self.fig, master=self.groups['render'])
+        canvas = FigureCanvasTkAgg(self.fig, master=self.groups['region_render'])
         self.plot_widget = canvas.get_tk_widget()
         self.plot_widget.grid(row=0, column=0)
 
     # %% Callbacks
     # -- Sliders
+    def __interp_changed(self, interp):
+        """Interpolation method changed"""
+        # Ignore interp since already stored in variable
+        self.__update_region_figure()
+
+    def __cmap_changed(self, cmap):
+        """Colormap method changed"""
+        # Ignore cmap since already stored in variable
+        self.__update_region_figure()
+
     def __time_slider_changed(self, percent):
         """Time slider changed"""
-        sim_percent = self.time_slider.get()
-        print(sim_percent)
-
-    # -- Dropdowns
-    def __interp_changed(self, interp_type):
-        """Interpolation type changed"""
-        self.interp_type = interp_type
-        self.__update_figure()
+        self.__update_region_figure()
 
     # -- Buttons
     def __load_model_pressed(self):
@@ -376,30 +378,30 @@ class Ui():
         carbon = self.Model.predict(x)
 
         # At this point, simulation was successful. Store all necessary results
-        self.sim_results = {
-            'mode': sim_mode,
-            'lats': lats,  # (n_loc)
-            'lons': lons,  # (n_loc)
-            'sim_times': sim_times,  # (n_time)
-            'carbon': carbon,  # (n_time, n_loc)
-        }
+        if sim_mode == 'region':
+            self.sim_results_region = {
+                'lats': lats,  # (n_loc)
+                'lons': lons,  # (n_loc)
+                'sim_times': sim_times,  # (n_time)
+                'carbon': carbon,  # (n_time, n_loc)
+            }
+            self.__update_region_figure()
+        else:
+            self.sim_results_location = {
+                'lats': lats,  # (n_loc)
+                'lons': lons,  # (n_loc)
+                'sim_times': sim_times,  # (n_time)
+                'carbon': carbon,  # (n_time, n_loc)
+            }
+            self.__update_location_figure()
 
         self.sim_status.set('Simulation Complete')
-        self.__update_figure()
 
     # Plotting
-    def __update_figure(self):
-        """Update figure for region-based mode"""
-        mode = self.sim_results['mode']
-        if mode == 'location':
-            self.__update_location_figure()
-        else:
-            self.__update_region_figure()
-
     def __update_region_figure(self):
         """Update figure(s) for region-based simulation"""
         # Show the Mean Plot
-        sim_results = self.sim_results
+        sim_results = self.sim_results_region
         lat_axis = sim_results['lats']
         lon_axis = sim_results['lons']
         carbon = sim_results['carbon']
@@ -414,7 +416,8 @@ class Ui():
             mean_carbon,
             extent=[min_lon, max_lon, max_lat, min_lat],
             aspect='auto',
-            interpolation=self.interp_type,
+            interpolation=self.interp_type.get(),
+            cmap=self.cmap_type.get(),
         )
         ax0.set_xlabel('Longitude')
         ax0.set_ylabel('Latitude')
@@ -427,7 +430,6 @@ class Ui():
         ))
         ax0.grid(True)
         # self.fig.colorbar(im, ax=ax0)
-        self.fig.canvas.draw_idle()
 
         # Show the instantaneous plot
         sim_percent = self.time_slider.get()
@@ -436,17 +438,21 @@ class Ui():
         inst_time = sim_times[idx]
         inst_date = datetime.datetime.fromtimestamp(inst_time).strftime(fmt)
 
+        ax1 = self.fig.axes[1]
+        ax1.clear()
+        im = ax1.imshow(
+            carbon[idx, :, :],
+            extent=[min_lon, max_lon, max_lat, min_lat],
+            aspect='auto',
+            interpolation=self.interp_type.get(),
+            cmap=self.cmap_type.get(),
+        )
+        ax1.set_xlabel('Longitude')
+        ax1.set_ylabel('Latitude')
+        ax1.set_title('Carbon Concentration on {}'.format(inst_date))
+        ax1.grid(True)
 
-    def __toggle_mode(self):
-        """Toggle UI for region and location modes"""
-        mode = self.mode.get()
-
-        if mode.lower() == 'region':
-            self.groups['location'].grid_forget()
-            self.groups['region'].grid(**GROUP_GRID_PARAM['region'])
-        else:
-            self.groups['region'].grid_forget()
-            self.groups['location'].grid(**GROUP_GRID_PARAM['location'])
+        self.fig.canvas.draw_idle()
 
 # %%
 if __name__ == '__main__':

@@ -38,7 +38,7 @@ def setup_timeline(start_date, stop_date, sim_step, logger=None):
     stop_epoch_time = stop_datetime.timestamp()
 
     if start_epoch_time > stop_epoch_time:
-        raise ValueError('Stop time must be prior to start time {}')
+        raise ValueError('Start time must be prior to stop time {}')
         return
 
     sim_seconds = {
