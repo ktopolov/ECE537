@@ -57,11 +57,11 @@ Input arguments are:
 *  `--out-dir`: Output file directory to store KML, PNG or other files from simulation  
 Example command line calls are:  
 ```
-python /home/ktopolov/ECE537/cli/cli_app.py --mode region --start-date 2003 10 01 --stop-date 2012 10 01 --lat-bounds -50.0 50.0 --lat-res 1.0 --lon-bounds -150.0 150.0 --lon-res 1.0 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
+python /home/ktopolov/ECE537/cli/cli_app.py --mode region --start-date 2022 10 01 --stop-date 2030 10 01 --lat-bounds -50.0 50.0 --lat-res 1.0 --lon-bounds -150.0 150.0 --lon-res 1.0 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
 ```  
   
 ```  
-python /home/ktopolov/ECE537/cli/cli_app.py --mode location --start-date 2003 10 01 --stop-date 2012 10 01 --locs 10.0 20.0 15.5 36.2 18.2 25.5 17.7 32.9 30.5 18.5 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
+python /home/ktopolov/ECE537/cli/cli_app.py --mode location --start-date 2022 10 01 --stop-date 2030 10 01 --locs 10.0 20.0 15.5 36.2 18.2 25.5 17.7 32.9 30.5 18.5 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
 ```  
   
 # External Tools  
