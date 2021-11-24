@@ -39,7 +39,7 @@ This script opens many plots to give a high-level overview of the data stored in
 python /mnt/c/Users/ktopo/Desktop/ECE537/cli/visualize_data.py --co2-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/co2_data.csv --ch4-csv /mnt/c/Users/ktopo/Desktop/ECE537/data/ch4_data.csv 
 ```  
   
-  #### main_app.py  
+  #### cli_app.py  
   This is the main application to use a trained model for prediction. There are two modes:  
   *  Location-Based: Given a set of lat/lon locations to test, rank them in terms of which is optimal location for carbon removal site and provide some metrics. Output to KML.  
   *  Region-Based: Given latitude/longitude boundaries and some spacing, measure metrics over the region and provide contours over the region indicating where metrics are maximized  
