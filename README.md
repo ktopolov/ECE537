@@ -53,14 +53,15 @@ Input arguments are:
 *  `--lon_bounds`: Minimum and maximum longitude boundaries (degrees, -180.0 to 180.0) entered as `min max`. Only needed for `--mode region`  
 *  `--lat-res`: Resolution or spacing of latitude grid samples (deg); only for `--mode region`
 *  `--lon-res`: Resolution or spacing of longitude grid samples (deg); only for `--mode region`  
-*  `--locs`: Locations of points to test for `--mode location`. Stored as `--locs lat1 lon1 lat2 lon2 ...`
+*  `--locs`: Locations of points to test for `--mode location`. Stored as `--locs lat1 lon1 lat2 lon2 ...`  
+*  `--out-dir`: Output file directory to store KML, PNG or other files from simulation  
 Example command line calls are:  
 ```
---mode region --lat-bounds -20.0 20.0 --lat-res 1.0 --lon-bounds -30.0 30.0 --lon-res 2.0 --start-time 10 2022 --months 24
+python /home/ktopolov/ECE537/cli/cli_app.py --mode region --start-date 2003 10 01 --stop-date 2012 10 01 --lat-bounds -50.0 50.0 --lat-res 1.0 --lon-bounds -150.0 150.0 --lon-res 1.0 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
 ```  
   
 ```  
---mode location --locs 20.0 30.0 15.5 22.3 --start-time 10 2022 --months 36
+python /home/ktopolov/ECE537/cli/cli_app.py --mode location --start-date 2003 10 01 --stop-date 2012 10 01 --locs 10.0 20.0 15.5 36.2 18.2 25.5 17.7 32.9 30.5 18.5 --sim-step weekly --out-dir /home/ktopolov/ECE537/output/runs
 ```  
   
 # External Tools  
