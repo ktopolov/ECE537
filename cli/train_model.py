@@ -148,7 +148,7 @@ def _get_model(
         Keras compiled model
     """
     # TODO-KT: Find automated way to generate these sizes
-    hidden_sizes = [10, 50, 100, 200, 100, 50, 10]
+    hidden_sizes = [10, 50, 100, 200, 250, 300, 350, 300, 250, 200, 100, 50, 10]
 
     layer_list = [
         keras.Input(shape=(n_feature,), name='Input')
@@ -314,7 +314,7 @@ def main():
     output_dir = Path('./output')
     output_dir.mkdir(parents=True, exist_ok=True)
     log_file = output_dir / 'training.log'
-    tb_log_dir = output_dir / 'tb_logs'
+    tb_log_dir = output_dir / 'best_model_tb_log'
     data_type = 'xco2'  # xco2, xch4
     verbosity = 1
 
@@ -327,12 +327,12 @@ def main():
 
     # Split test data from the rest. The rest will be used for K-fold x-validation
     X_train, X_cross, X_test, y_train, y_cross, y_test = split_data(
-        X=X, y=y, test_percent=0.15, cross_percent=0.15)
+        X=X, y=y, test_percent=0.2, cross_percent=0.2)
     del X, y  # remove data we no longer need
 
     # -- Setup Model
     # Hyperparameters
-    HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([64]))
+    HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([32]))
     HP_N_EPOCH = hp.HParam('n_epoch', hp.Discrete([10]))
     HP_LEARNING_RATE = hp.HParam(
         'learning_rate', hp.Discrete([1e-4]))
@@ -389,7 +389,7 @@ def main():
         )
 
     # # %% Save a Model
-    model_path = output_dir / 'TFModel'
+    model_path = output_dir / 'TFModel_complex'
     keras.models.save_model(
         model=Model,
         filepath=model_path

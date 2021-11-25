@@ -307,7 +307,11 @@ class Ui():
 
         self.groups['region_render'] = {
             'group': group,
-            'vars': {'fig': fig}
+            'vars': {
+                'fig': fig,
+                'cb0': None,  # store colorbars per plot
+                'cb1': None
+            }
         }
 
     def __add_location_render_group(self, widget, grid_param):
@@ -542,6 +546,14 @@ class Ui():
         cmap_type = region_plot_group_vars['cmap_type']
         time_slider = region_plot_group_vars['time_slider']
 
+        # Remove colorbars
+        if region_render_group_vars['cb0']:
+            region_render_group_vars['cb0'].remove()
+            region_render_group_vars['cb0'] = None
+        if region_render_group_vars['cb1']:
+            region_render_group_vars['cb1'].remove()
+            region_render_group_vars['cb1'] = None
+
         ax0 = fig.axes[0]
         ax0.clear()
         min_lat, max_lat = lat_axis.min(), lat_axis.max()
@@ -552,10 +564,11 @@ class Ui():
 
         im = ax0.imshow(
             mean_carbon,
-            extent=[min_lon, max_lon, max_lat, min_lat],
+            extent=[min_lon, max_lon, min_lat, max_lat],
             aspect='auto',
             interpolation=interp_type.get(),
             cmap=cmap_type.get(),
+            origin='lower',
             vmin=vmin,
             vmax=vmax
         )
@@ -565,11 +578,11 @@ class Ui():
         start_datetime = datetime.datetime.fromtimestamp(sim_times.min())
         stop_datetime = datetime.datetime.fromtimestamp(sim_times.max())
         fmt = '%m/%d/%Y'
-        ax0.set_title('Mean Carbon - {} to {}'.format(
+        ax0.set_title('Mean Carbon (ppm) - {} to {}'.format(
             start_datetime.strftime(fmt), stop_datetime.strftime(fmt)
         ))
-        ax0.grid(True)
-        # self.fig.colorbar(im, ax=ax0)
+        ax0.grid(True)        
+        region_render_group_vars['cb0'] = plt.colorbar(im, ax=ax0)
 
         # Show the instantaneous plot
         sim_percent = time_slider.get()
@@ -583,17 +596,19 @@ class Ui():
         ax1.clear()
         im = ax1.imshow(
             carbon[idx, :, :],
-            extent=[min_lon, max_lon, max_lat, min_lat],
+            extent=[min_lon, max_lon, min_lat, max_lat],
             aspect='auto',
             interpolation=interp_type.get(),
             cmap=cmap_type.get(),
+            origin='lower',
             vmin=vmin,
             vmax=vmax
         )
         ax1.set_xlabel('Longitude')
         ax1.set_ylabel('Latitude')
-        ax1.set_title('Carbon Concentration on {}'.format(inst_date))
+        ax1.set_title('Carbon Concentration (ppm) on {}'.format(inst_date))
         ax1.grid(True)
+        region_render_group_vars['cb1'] = plt.colorbar(im, ax=ax1)
 
         fig.canvas.draw_idle()
 
@@ -624,8 +639,19 @@ class Ui():
                 linewidth=1.5
             )
 
-        ax0.set_xlabel('Epoch Time (TODO-Use Date)')
-        ax0.set_ylabel('Carbon')
+        dates = []
+        for epoch_time in sim_times:
+            dt = datetime.datetime.fromtimestamp(epoch_time)
+            date = dt.strftime('%Y-%m-%d')
+            dates.append(date)
+
+        n_time = sim_times.size
+        n_ticks = 4  # show four dates only
+        step = max(1, n_time // n_ticks)
+        ax0.set_xticks(sim_times[::step])
+        ax0.set_xticklabels(dates[::step], rotation='horizontal', fontsize=8)
+        ax0.set_xlabel('Date (YYYY/MM/DD)')
+        ax0.set_ylabel('Carbon Dioxide (ppm)')
         ax0.set_title('Carbon per Location')
         ax0.legend()
         ax0.grid(True)
@@ -637,9 +663,7 @@ class Ui():
         ax1.set_xlabel('Longitude')
         ax1.set_ylabel('Latitude')
         ax1.set_title('Carbon Concentration per Location')
-        ax1.legend()
         ax1.grid(True)
-        # colorbar?
 
         fig.canvas.draw_idle()
 
