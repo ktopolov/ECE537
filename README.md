@@ -1,7 +1,9 @@
 # ECE537
 This code is used for a project predicting optimal locations for carbon removal site locations using collected CO2 and CH4 datasets.  
   
-See "Midterm_Proposal.docx" for a description on the goal for the project.  
+The following is the project report which explains the purpose of the project:  
+[Topolovec_Final_Project.pdf](https://github.com/ktopolov/ECE537/files/7818738/Topolovec_Final_Project.pdf)
+
   
 # Repository Structure  
 The repository is a Python-based repository. The structure splits files into three main categories:  
